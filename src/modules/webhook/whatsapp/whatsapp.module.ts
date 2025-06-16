@@ -11,7 +11,8 @@ import { CentralRepository } from 'src/modules/central/central.repository';
 @Module({
   imports: [
     CacheModule.register({
-      ttl: 600,
+      ttl: 6000,
+      max: 1000,
     }),
   ],
   controllers: [WhatsappController],

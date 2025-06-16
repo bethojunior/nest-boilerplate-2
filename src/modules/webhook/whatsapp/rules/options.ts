@@ -24,7 +24,7 @@ export class Options {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {
     this.appName = props.appName || '704Apps';
-    this.message = props.message;
+    this.message = props.message.trim();
     this.customer = {
       phone: props.customer.phone,
       name: props.customer.name,
@@ -45,7 +45,7 @@ export class Options {
 
   public async setStep(step: string): Promise<void> {
     this.step = step;
-    await this.cacheManager.set(this.sessionKey, step, 600); // 10 minutos
+    await this.cacheManager.set(this.sessionKey, step, 3600);
   }
 
   public async reset(): Promise<void> {
@@ -80,7 +80,7 @@ export class Options {
   private async handleStart(): Promise<string> {
     if (this.message === '1') {
       await this.setStep('ASK_ORIGIN');
-      return '🚗 Ótimo! Vamos iniciar sua corrida. Por favor, digite o seu endereço de origem:';
+      return await this.askOrigin();
     }
 
     if (this.message === '2') {
@@ -103,32 +103,32 @@ export class Options {
 
   private async getOrigin(): Promise<string> {
     this.INewTrip.origin.address = this.message;
-
-    try {
-      const coords = await geocodeAddress(this.message);
-      this.INewTrip.origin.latitude = coords.latitude;
-      this.INewTrip.origin.longitude = coords.longitude;
-      console.log('Coordenadas de origem:', this.INewTrip.origin);
-    } catch (err) {
-      return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
-    }
+    // try {
+    //   const coords = await geocodeAddress(this.INewTrip.origin.address);
+    //   this.INewTrip.origin.latitude = coords.latitude;
+    //   this.INewTrip.origin.longitude = coords.longitude;
+    // } catch (err) {
+    //   return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
+    // }
 
     await this.setStep('ASK_DESTINY');
-    return `📍 Agora, *digite o endereço de destino da corrida*.`;
+    return await this.askDestiny();
   }
 
   private async askDestiny(): Promise<string> {
     await this.setStep('GET_DESTINY');
-    return `✏️ *Digite o endereço de destino*`;
+    return `📍 *Digite o endereço de destino*`;
   }
 
   private async getDestiny(): Promise<string> {
     this.INewTrip.destiny.address = this.message;
-
-    const coords = await geocodeAddress(this.message);
-    this.INewTrip.destiny.latitude = coords.latitude;
-    this.INewTrip.destiny.longitude = coords.longitude;
-
+    // try {
+    //   const coords = await geocodeAddress(this.message);
+    //   this.INewTrip.destiny.latitude = coords.latitude;
+    //   this.INewTrip.destiny.longitude = coords.longitude;
+    // } catch (err) {
+    //   return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
+    // }
     await this.setStep('SHOW_PRICES');
     return this.showPrices();
   }

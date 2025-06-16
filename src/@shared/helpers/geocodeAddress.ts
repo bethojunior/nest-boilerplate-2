@@ -1,23 +1,19 @@
 import axios from 'axios';
 
 export async function geocodeAddress(address: string): Promise<{ latitude: string; longitude: string }> {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) {
-    throw new Error('Google Maps API key is not configured');
-  }
-
   const encodedAddress = encodeURIComponent(address);
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`;
 
   try {
-    const response = await axios.get(url);
-    const results = response.data.results;
+    const response = await axios.get(url, {
+      headers: { 'User-Agent': 'SeuAppNomeAqui - email@seudominio.com' }, // importante!
+    });
+    const results = response.data;
 
     if (results && results.length > 0) {
-      const location = results[0].geometry.location;
       return {
-        latitude: location.lat.toString(),
-        longitude: location.lng.toString(),
+        latitude: results[0].lat,
+        longitude: results[0].lon,
       };
     } else {
       throw new Error('Endereço não encontrado');
