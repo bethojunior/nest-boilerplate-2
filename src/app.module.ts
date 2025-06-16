@@ -11,10 +11,21 @@ import { WhatsappModule } from './modules/webhook/whatsapp/whatsapp.module';
 import { ClientModule } from './modules/client/client.module';
 import { CentralModule } from './modules/central/central.module';
 
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-ioredis';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    CacheModule.registerAsync({
+      useFactory: async () => ({
+        store: redisStore,
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        ttl: 300,
+      }),
     }),
     BullModule.forRoot({
       connection: {
@@ -42,4 +53,4 @@ import { CentralModule } from './modules/central/central.module';
   ],
 })
 
-export class AppModule {}
+export class AppModule { }

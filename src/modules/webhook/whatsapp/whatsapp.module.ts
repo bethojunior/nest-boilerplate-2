@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
 import { WhatsappService } from './whatsapp.service';
 import { WhatsappController } from './whatsapp.controller';
 import { Chat } from './rules/chat';
@@ -8,7 +9,19 @@ import { HandleCentralAxiosWebhook } from 'src/providers/central/handle';
 import { CentralRepository } from 'src/modules/central/central.repository';
 
 @Module({
+  imports: [
+    CacheModule.register({
+      ttl: 600,
+    }),
+  ],
   controllers: [WhatsappController],
-  providers: [WhatsappService, Chat, CentralRepository, HandleCentralAxiosWebhook, WhatsAppProvider, CentralProvider],
+  providers: [
+    WhatsappService,
+    Chat,
+    CentralRepository,
+    HandleCentralAxiosWebhook,
+    WhatsAppProvider,
+    CentralProvider,
+  ],
 })
-export class WhatsappModule { }
+export class WhatsappModule {}
