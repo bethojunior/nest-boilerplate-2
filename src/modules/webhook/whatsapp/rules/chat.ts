@@ -1,22 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Options } from './options';
-import { HandleWebhook, IContext } from '../@types/main';
+import { HandleWebhook } from '../@types/main';
+import { CentralProvider } from 'src/providers/central/central.provider';
 
 @Injectable()
 export class Chat {
+  constructor(private readonly centralProvider: CentralProvider) {}
+
   async handle(props: HandleWebhook) {
-    const options = new Options(props);
+    const options = new Options(props, this.centralProvider);
     return await options.handle();
-    // const messageContent = `*Olá! Escolha uma das opções abaixo para iniciar o atendimento no ${props.appName}:*`;
-    // const options = {
-    //   '1': '🚗 Chamar uma corrida',
-    //   '2': '❌ Cancelar corrida',
-    // };
-
-    // const formattedOptions = Object.entries(options)
-    //   .map(([key, text]) => `*${key}.* ${text}`)
-    //   .join('\n');
-
-    // return `${messageContent}\n\n${formattedOptions}`;
   }
 }

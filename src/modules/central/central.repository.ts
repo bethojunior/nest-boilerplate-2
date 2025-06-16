@@ -6,18 +6,18 @@ import { BusinessException } from 'src/@shared/exceptions/business.exception';
 
 @Injectable()
 export class CentralRepository {
-  constructor(private readonly prisma: PrismaProvider) {}
+  constructor(private readonly prisma: PrismaProvider) { }
   async create(props: CreateCentralDto) {
     try {
       return await this.prisma.central.create({
-        data: { 
-          name : props.name,
+        data: {
+          name: props.name,
           clientId: props.clientId,
           centralIdExternal: Number(props.centralIdExternal),
-         }
+        }
       });
     } catch (error) {
-      if(error instanceof BusinessException) throw error;
+      if (error instanceof BusinessException) throw error;
       throw new BusinessException(
         'Error to store central',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -28,7 +28,7 @@ export class CentralRepository {
   async findAll() {
     try {
       return await this.prisma.central.findMany({
-        include:{
+        include: {
           client: true
         }
       });
@@ -45,7 +45,7 @@ export class CentralRepository {
       const isExists = await this.prisma.central.findUnique({
         where: { id },
       });
-      if(!isExists){
+      if (!isExists) {
         throw new BusinessException(
           'Central not found',
           HttpStatus.NOT_FOUND,
@@ -65,7 +65,7 @@ export class CentralRepository {
       const isExists = await this.prisma.central.findUnique({
         where: { id },
       });
-      if(!isExists){
+      if (!isExists) {
         throw new BusinessException(
           'Central not found',
           HttpStatus.NOT_FOUND,
@@ -88,7 +88,7 @@ export class CentralRepository {
       const isExists = await this.prisma.central.findUnique({
         where: { id },
       });
-      if(!isExists){
+      if (!isExists) {
         throw new BusinessException(
           'Central not found',
           HttpStatus.NOT_FOUND,
@@ -104,5 +104,17 @@ export class CentralRepository {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async getCentralByAppName(appName: string) {
+    const central = await this.prisma.central.findFirst({
+      where: {
+        name: appName,
+      },
+      include: {
+        client: true,
+      }
+    });
+    return central;
   }
 }

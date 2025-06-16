@@ -5,7 +5,7 @@ import { CentralRepository } from './central.repository';
 
 @Injectable()
 export class CentralService {
-  constructor(private readonly centralRepository: CentralRepository) {}
+  constructor(private readonly centralRepository: CentralRepository) { }
   async create(createCentralDto: CreateCentralDto) {
     try {
       return await this.centralRepository.create(createCentralDto);
