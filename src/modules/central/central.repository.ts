@@ -107,10 +107,11 @@ export class CentralRepository {
   }
 
   async getCentralByAppName(appName: string) {
+    const client = await this.prisma.client.findFirst({
+      where: { appName },
+    });
     const central = await this.prisma.central.findFirst({
-      where: {
-        name: appName,
-      },
+      where: { clientId: client.id },
       include: {
         client: true,
       }

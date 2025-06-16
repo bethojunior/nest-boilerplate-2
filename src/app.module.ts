@@ -8,6 +8,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { NotificationEventHanlder } from './providers/notification/notification.event.handler';
 import { DiscordNotificationProvider } from './providers/notification/discord.notification.provider';
 import { WhatsappModule } from './modules/webhook/whatsapp/whatsapp.module';
+import { ClientModule } from './modules/client/client.module';
+import { CentralModule } from './modules/central/central.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { WhatsappModule } from './modules/webhook/whatsapp/whatsapp.module';
     EmailModule,
     PrismaModule,
     AuthModule,
+    ClientModule,
+    CentralModule,
     WhatsappModule,
   ],
   controllers: [],

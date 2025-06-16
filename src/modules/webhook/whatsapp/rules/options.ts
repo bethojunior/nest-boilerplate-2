@@ -87,7 +87,36 @@ export class Options {
   }
 
   async handleCalculatePrice() {
-    const messageContent = `*Perfeito ${this.customer.name}*! \n\n *Agora vamos calcular o preço da corrida.*`;
+    const payload = {
+      "origin": {
+        "address": "980, Rua Nunes Valente, Aldeota, Fortaleza, Regio Geogrfica Imediata de Fortaleza, Regio Geogrfi",
+        "latitude": -3.7334001,
+        "longitude": -38.5030326
+      },
+      "destination": {
+        "address": "Rua Nunes Valente, 2234, Aldeota, Fortaleza - CE, 60125-035, Brasil",
+        "latitude": -3.73333,
+        "longitude": -38.50293
+      },
+    };
+    if (this.appName === 'localhost'){
+      const calculatePrice = await this.centralProvider.calculatePrice(payload, 'voutehomologar');
+    }
+    const calculatePrice = await this.centralProvider.calculatePrice(payload, this.appName);
+
+    if (!calculatePrice || !Array.isArray(calculatePrice)) {
+      return '❗ Não foi possível calcular os preços no momento. Tente novamente.';
+    }
+
+    let messageContent = `*Preços calculados com sucesso!* 🚗\n\n`;
+
+    for (const price of calculatePrice) {
+      messageContent += `🔹 *${price.priceName}* - R$ ${price.price.toFixed(2)}\n`;
+      messageContent += `📃 ${price.description}\n\n`;
+    }
+
+    messageContent += 'Digite o número correspondente à opção desejada para continuar.';
+
     return messageContent;
   }
 
