@@ -4,15 +4,19 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class CreateAuthDto {
+export class CreateClientDto {
   @IsNotEmpty()
   name: string;
+
+  @IsNotEmpty()
+  appName: string;
 
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @IsNotEmpty()
-  @MinLength(8)
-  password: string;
+  @MinLength(11)
+  phone: string;
+
 }

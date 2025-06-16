@@ -18,3 +18,44 @@ model User {
 
   @@map("user")
 }
+
+model Client {
+  id       String  @id @default(cuid())
+  name     String
+  appName  String
+  email    String  @unique
+  phone    String
+  isActive Boolean @default(true)
+
+  Central Central[]
+
+  createdAt DateTime @default(now())
+
+  @@map("client")
+}
+
+model Central {
+  id                String  @id @default(cuid())
+  name              String
+  clientId          String
+  centralIdExternal Int     @unique
+  isActive          Boolean @default(true)
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  createdAt DateTime @default(now())
+  Trip      Trip[]
+
+  @@map("central")
+}
+
+model Trip {
+  id            String   @id @default(cuid())
+  tripReference String   @unique
+  centralId     String?
+  central       Central? @relation(fields: [centralId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("trip")
+}

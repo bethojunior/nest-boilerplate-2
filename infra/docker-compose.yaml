@@ -3,13 +3,13 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile
-    container_name: app
+    container_name: app-mobilidade-wpp
     restart: always
     depends_on:
       - postgres
       - redis
     ports:
-      - "3000:3000"
+      - "3002:3002"
     environment:
       DATABASE_URL: postgres://root:password@postgres:5432/mydatabase
       REDIS_HOST: redis
@@ -19,14 +19,14 @@ services:
 
   redis:
     image: redis/redis-stack-server:latest
-    container_name: redis
+    container_name: redis-mobilidade-wpp
     restart: always
     ports:
       - "6379:6379"
 
   postgres:
     image: postgres:latest
-    container_name: postgres
+    container_name: postgres--mobilidade-wpp
     restart: always
     ports:
       - "5432:5432"

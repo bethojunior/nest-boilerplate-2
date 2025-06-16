@@ -1,14 +1,14 @@
 services:
   redis:
     image: redis:latest
-    container_name: mobicity-redis
+    container_name: mobilidade-wpp-redis
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6380"
 
   postgres:
     image: postgres:latest
-    container_name: mobicity-postgres
+    container_name: mobilidade-wpp-postgres
     restart: always
     ports:
       - "5432:5432"

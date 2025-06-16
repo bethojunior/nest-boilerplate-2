@@ -7,6 +7,7 @@ import { EmailModule } from './jobs/queues/email/email.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { NotificationEventHanlder } from './providers/notification/notification.event.handler';
 import { DiscordNotificationProvider } from './providers/notification/discord.notification.provider';
+import { WhatsappModule } from './modules/webhook/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DiscordNotificationProvider } from './providers/notification/discord.no
     EmailModule,
     PrismaModule,
     AuthModule,
+    WhatsappModule,
   ],
   controllers: [],
   providers: [
