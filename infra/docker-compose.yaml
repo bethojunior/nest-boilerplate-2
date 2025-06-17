@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile
-    container_name: app-mobilidade-wpp
+    container_name: app
     restart: always
     depends_on:
       - postgres
@@ -19,14 +19,14 @@ services:
 
   redis:
     image: redis/redis-stack-server:latest
-    container_name: redis-mobilidade-wpp
+    container_name: redis
     restart: always
     ports:
       - "6379:6379"
 
   postgres:
     image: postgres:latest
-    container_name: postgres--mobilidade-wpp
+    container_name: postgres
     restart: always
     ports:
       - "5432:5432"
