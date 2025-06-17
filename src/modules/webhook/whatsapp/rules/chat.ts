@@ -11,7 +11,7 @@ export class Chat {
   constructor(
     private readonly centralProvider: CentralProvider,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-  ) {}
+  ) { }
 
   async handle(props: HandleWebhook) {
     const options = new Options(props, this.centralProvider, this.cacheManager);

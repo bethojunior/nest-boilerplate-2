@@ -10,31 +10,30 @@ export class Options {
   private step: string;
 
   private readonly sessionKey: string;
+  private readonly tripKey: string;
+
   private readonly appName: string;
   private readonly customer: { phone: string; name: string };
-
-  private readonly INewTrip = {
-    origin: { latitude: '', longitude: '', address: '' },
-    destiny: { latitude: '', longitude: '', address: '' },
-  };
 
   constructor(
     props: any,
     private readonly centralProvider: CentralProvider,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {
+
     this.appName = props.appName || '704Apps';
-    this.message = props.message.trim();
+    this.message = (props.message || '').trim().toLowerCase();
     this.customer = {
       phone: props.customer.phone,
       name: props.customer.name,
     };
 
     this.sessionKey = `step:${this.customer.phone}`;
+    this.tripKey = `trip:${this.customer.phone}`;
   }
 
   public async setMessage(message: string) {
-    this.message = message.trim();
+    this.message = (message || '').trim().toLowerCase();
   }
 
   public async getStep(): Promise<string> {
@@ -45,42 +44,54 @@ export class Options {
 
   public async setStep(step: string): Promise<void> {
     this.step = step;
-    await this.cacheManager.set(this.sessionKey, step, 3600);
+    try {
+      await this.cacheManager.set(this.sessionKey, step, 3600);
+      const confirmed = await this.cacheManager.get(this.sessionKey);
+      if (confirmed !== step) {
+        console.warn(`[setStep] Step não persistido corretamente para ${this.customer.phone}`);
+      } else {
+        console.log(`[setStep] Definindo step para ${this.customer.phone}: ${step}`);
+      }
+    } catch (err) {
+      console.error(`[setStep] Erro ao salvar o step ${step}:`, err);
+    }
   }
 
   public async reset(): Promise<void> {
     await this.cacheManager.del(this.sessionKey);
+    await this.cacheManager.del(this.tripKey);
   }
 
   public async run(): Promise<string> {
     const currentStep = await this.getStep();
+    if (
+      currentStep === 'START' &&
+      this.message.match(/avenida|rua|travessa|praça|estrada|bairro|logradouro/)
+    ) {
+      console.log('[run] Detectado endereço na mensagem em START, forçando step GET_ORIGIN');
+      await this.setStep('GET_ORIGIN');
+      return this.getOrigin();
+    }
 
     switch (currentStep) {
-      case 'START':
-        return this.handleStart();
-      case 'ASK_ORIGIN':
-        return this.askOrigin();
-      case 'GET_ORIGIN':
-        return this.getOrigin();
-      case 'ASK_DESTINY':
-        return this.askDestiny();
-      case 'GET_DESTINY':
-        return this.getDestiny();
-      case 'SHOW_PRICES':
-        return this.showPrices();
-      case 'AWAIT_CONFIRM':
-        return this.confirmTrip();
-      case 'CANCEL':
-        return this.cancelTrip();
-      default:
-        return this.notAvailable();
+      case 'START': return this.handleStart();
+      case 'ASK_ORIGIN': return this.askOrigin();
+      case 'GET_ORIGIN': return this.getOrigin();
+      case 'ASK_DESTINY': return this.askDestiny();
+      case 'GET_DESTINY': return this.getDestiny();
+      case 'SHOW_PRICES': return this.showPrices();
+      case 'AWAIT_CONFIRM': return this.confirmTrip();
+      case 'CANCEL': return this.cancelTrip();
+      default: return this.notAvailable();
     }
   }
 
   private async handleStart(): Promise<string> {
+    console.log(`[handleStart] Mensagem: "${this.message}"`);
+
     if (this.message === '1') {
       await this.setStep('ASK_ORIGIN');
-      return await this.askOrigin();
+      return this.askOrigin();
     }
 
     if (this.message === '2') {
@@ -97,53 +108,111 @@ export class Options {
   }
 
   private async askOrigin(): Promise<string> {
+    console.log('[askOrigin] Perguntando endereço de origem');
     await this.setStep('GET_ORIGIN');
-    return `📍 *Digite o endereço de origem da corrida*`;
+    return '📍 *Digite o endereço de origem da corrida*';
   }
 
   private async getOrigin(): Promise<string> {
-    this.INewTrip.origin.address = this.message;
-    // try {
-    //   const coords = await geocodeAddress(this.INewTrip.origin.address);
-    //   this.INewTrip.origin.latitude = coords.latitude;
-    //   this.INewTrip.origin.longitude = coords.longitude;
-    // } catch (err) {
-    //   return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
-    // }
+    const address = this.message;
+    console.log('[getOrigin] Endereço recebido:', address);
 
-    await this.setStep('ASK_DESTINY');
-    return await this.askDestiny();
+    try {
+      const coords = await geocodeAddress(address);
+      console.log('[getOrigin] Coordenadas obtidas:', coords);
+
+      if (!coords || !coords.latitude || !coords.longitude) {
+        console.warn('[getOrigin] Coordenadas inválidas recebidas.');
+        return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
+      }
+
+      const origin = {
+        address,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      };
+
+      const currentTrip = (await this.cacheManager.get<any>(this.tripKey)) || {};
+      currentTrip.origin = origin;
+
+      await this.cacheManager.set(this.tripKey, currentTrip, 3600);
+      console.log('[getOrigin] Origem salva no cache:', currentTrip);
+
+      await this.setStep('ASK_DESTINY');
+      return this.askDestiny();
+    } catch (error) {
+      console.error('[getOrigin] Erro ao obter coordenadas:', error);
+      return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
+    }
   }
 
   private async askDestiny(): Promise<string> {
+    console.log('[askDestiny] Perguntando endereço de destino');
     await this.setStep('GET_DESTINY');
-    return `📍 *Digite o endereço de destino*`;
+    return '📍 *Digite o endereço de destino*';
   }
 
   private async getDestiny(): Promise<string> {
-    this.INewTrip.destiny.address = this.message;
-    // try {
-    //   const coords = await geocodeAddress(this.message);
-    //   this.INewTrip.destiny.latitude = coords.latitude;
-    //   this.INewTrip.destiny.longitude = coords.longitude;
-    // } catch (err) {
-    //   return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
-    // }
-    await this.setStep('SHOW_PRICES');
-    return this.showPrices();
+    const address = this.message;
+    console.log('[getDestiny] Endereço recebido:', address);
+
+    try {
+      const coords = await geocodeAddress(address);
+      console.log('[getDestiny] Coordenadas obtidas:', coords);
+
+      // Validação mais segura para latitude e longitude
+      if (
+        !coords ||
+        coords.latitude == null ||
+        coords.longitude == null
+      ) {
+        console.warn('[getDestiny] Coordenadas inválidas recebidas.');
+        return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
+      }
+
+      const destiny = {
+        address,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      };
+
+      const trip = (await this.cacheManager.get<any>(this.tripKey)) || {};
+      trip.destiny = destiny;
+      console.log('[getDestiny] Viagem atualizada:', trip);
+
+      await this.cacheManager.set(this.tripKey, trip, 3600);
+
+      await this.setStep('SHOW_PRICES');
+      return this.showPrices();
+
+    } catch (error) {
+      console.error('[getDestiny] Erro ao obter coordenadas:', error);
+      return '❗ Não consegui localizar esse endereço. Por favor, envie um endereço válido.';
+    }
   }
 
+
   private async showPrices(): Promise<string> {
+    console.log('[showPrices] Dados da corrida:');
+    const trip = (await this.cacheManager.get<any>(this.tripKey)) || {};
+    if (!trip.origin || !trip.destiny) {
+      console.warn('[showPrices] Dados incompletos:', trip);
+      await this.setStep('START');
+      return '❗ Dados de origem ou destino incompletos. Reinicie com *1*.';
+    }
+
     try {
       const prices = await this.centralProvider.calculatePrice(
         {
-          origin: this.INewTrip.origin,
-          destiny: this.INewTrip.destiny,
+          origin: trip.origin,
+          destiny: trip.destiny,
         },
         this.appName,
       );
 
+      console.log('[showPrices] Preços calculados:', prices);
       if (!prices?.length) {
+        console.warn('[showPrices] Nenhum preço calculado.');
         return '❗ Não foi possível calcular o preço agora. Tente novamente mais tarde.';
       }
 
@@ -153,21 +222,22 @@ export class Options {
 
       await this.setStep('AWAIT_CONFIRM');
       return `💰 *Valores estimados:*\n${priceLines}\n\nDeseja prosseguir? (SIM ou NÃO)`;
-    } catch {
+    } catch (error) {
+      console.error('[showPrices] Erro ao calcular o preço:', error);
       return '❗ Erro ao calcular o preço. Por favor, tente novamente em instantes.';
     }
   }
 
   private async confirmTrip(): Promise<string> {
-    const content = this.message.toLowerCase();
+    console.log('[confirmTrip] Mensagem:', this.message);
 
-    if (content === 'sim') {
-      await this.setStep('START');
+    if (this.message === 'sim') {
+      await this.reset();
       return '✅ Corrida confirmada! Em breve, um motorista será designado.';
     }
 
-    if (content === 'não' || content === 'nao') {
-      await this.setStep('START');
+    if (this.message === 'não' || this.message === 'nao') {
+      await this.reset();
       return '🚫 Corrida cancelada. Volte quando quiser!';
     }
 
@@ -175,14 +245,14 @@ export class Options {
   }
 
   private async cancelTrip(): Promise<string> {
-    const content = this.message.toLowerCase();
+    console.log('[cancelTrip] Mensagem:', this.message);
 
-    if (content === 'sim') {
-      await this.setStep('START');
+    if (this.message === 'sim') {
+      await this.reset();
       return '🚫 Corrida cancelada com sucesso.';
     }
 
-    if (content === 'não' || content === 'nao') {
+    if (this.message === 'não' || this.message === 'nao') {
       await this.setStep('START');
       return '😅 Corrida não foi cancelada. Como podemos ajudar?';
     }
